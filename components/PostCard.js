@@ -6,7 +6,7 @@ import Link from "next/link";
 import ReactTimeAgo from "react-time-ago";
 import { UserContext } from "@/contexts/UserContext";
 
-export default function PostCard({ content, created_at, profiles: authorProfile }) {
+export default function PostCard({ content, created_at, photos, profiles: authorProfile }) {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const { profile: myProfile } = useContext(UserContext);
     function openDropdown(e) {
@@ -30,7 +30,7 @@ export default function PostCard({ content, created_at, profiles: authorProfile 
                 </div>
                 <div className="grow">
                     <p>
-                        <Link href={'/profile'}>
+                        <Link href={'/profile/' + authorProfile.id}>
                             <span className="mr-1 font-semibold cursor-pointer hover:underline">
                                 {authorProfile.name}
                             </span>
@@ -92,9 +92,18 @@ export default function PostCard({ content, created_at, profiles: authorProfile 
             </div>
             <div>
                 <p className="my-3 text-sm">{content}</p>
-                <div className="rounded-md overflow-hidden">
+                {photos?.length > 0 && (
+                    <div className="flex gap-4">
+                        {photos.map(photo => (
+                            <div className="">
+                                <img src={photo} className="rounded-md" alt="" />
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {/* <div className="rounded-md overflow-hidden">
                     <img src="https://images.unsplash.com/photo-1530841377377-3ff06c0ca713?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=870&q=80" alt="" />
-                </div>
+                </div> */}
             </div>
             <div className="mt-5 flex gap-8">
                 <button className="flex gap-2 items-center">

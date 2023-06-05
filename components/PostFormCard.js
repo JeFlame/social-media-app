@@ -3,10 +3,12 @@ import Avatar from "./Avatar";
 import Card from "./Card";
 import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { UserContext } from "@/contexts/UserContext";
+import Preloader from "./Preloader";
 
 export default function PostFormCard({ onPost }) {
     const [content, setContent] = useState('');
     const [uploads, setUploads] = useState([]);
+    const [isUploading, setIsUploading] = useState(false);
     const supabase = useSupabaseClient();
     const session = useSession();
     const { profile } = useContext(UserContext);
@@ -15,28 +17,34 @@ export default function PostFormCard({ onPost }) {
         supabase.from('posts').insert({
             author: session.user.id,
             content,
+            photos: uploads,
         }).then(response => {
             if (!response.error) {
                 setContent('');
+                setUploads([]);
                 onPost && onPost();
             }
         });
     }
 
-    function addPhotos(ev) {
+    async function addPhotos(ev) {
         const files = ev.target.files;
-        for (const file of files) {
-            const newName = Date.now() + file.name;
-            supabase.storage.from('photos')
-                .upload(newName, file)
-                .then(result => {
-                    if (result.data) {
-                        const url = process.env.NEXT_PUBLIC_SUPABASE_URL + '/storage/v1/object/public/photos/' + result.data.path;
-                        setUploads([...uploads, url]);
-                    } else {
-                        console.log(result);
-                    }
-                });
+        if (files.length > 0) {
+            setIsUploading(true);
+            for (const file of files) {
+                const newName = Date.now() + file.name;
+                const result = await supabase
+                    .storage
+                    .from('photos')
+                    .upload(newName, file);
+                if (result.data) {
+                    const url = process.env.NEXT_PUBLIC_SUPABASE_URL + '/storage/v1/object/public/photos/' + result.data.path;
+                    setUploads(prevUploads => [...prevUploads, url]);
+                } else {
+                    console.log(result);
+                }
+            }
+            setIsUploading(false);
         }
     }
 
@@ -54,6 +62,20 @@ export default function PostFormCard({ onPost }) {
                         className="grow py-3 h-14" placeholder={`What's on your mind, ${profile?.name}?`} />
                 )}
             </div>
+            {isUploading && (
+                <div>
+                    <Preloader />
+                </div>
+            )}
+            {uploads.length > 0 && (
+                <div className="flex gap-2">
+                    {uploads.map(upload => (
+                        <div className="mt-2">
+                            <img src={upload} alt="" className="w-auto h-24 rounded-md" />
+                        </div>
+                    ))}
+                </div>
+            )}
             <div className="flex gap-5 items-center mt-2">
                 <div>
                     <label className="flex gap-1">
